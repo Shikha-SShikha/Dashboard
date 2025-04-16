@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Hackathon Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="header"></div>
+
+    <div class="admin-link-container">
+        <form action="/login" method="POST" class="admin-login-form">
+            <input type="text" name="username" placeholder="Username" required>
+            <input type="password" name="password" placeholder="Password" required>
+            <button type="submit">Login as Admin</button>
+        </form>
+    </div>
+
+    <div class="participant-form">
+        <h2>Submit Help Request</h2>
+        <form action="/submit_help" method="POST">
+            <select name="team" required>
+                <option value="">Select your team</option>
+                {% for team_name in team_names %}
+                <option value="{{ team_name }}">{{ team_name }}</option>
+                {% endfor %}
+            </select>
+            <textarea name="help_type" placeholder="What kind of help do you need?" required></textarea>
+            <button type="submit">Request Help</button>
+        </form>
+
+        <h2>Submit Meme Entry</h2>
+        <form action="/submit_meme" method="POST">
+            <select name="team" required>
+                <option value="">Select your team</option>
+                {% for team_name in team_names %}
+                <option value="{{ team_name }}">{{ team_name }}</option>
+                {% endfor %}
+            </select>
+            <input type="url" name="meme_url" placeholder="Enter your meme URL" required>
+            <button type="submit">Submit Meme</button>
+        </form>
+    </div>
+</body>
+</html>

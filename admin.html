@@ -1,0 +1,305 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .help-request {
+            animation: fadeIn 0.5s ease-in-out;
+            animation-fill-mode: forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes fadeInOut {
+            0% { opacity: 0; }
+            50% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        .jury-tabs {
+            margin-top: 20px;
+        }
+
+        .tab-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .tab-button {
+            padding: 10px 20px;
+            border: none;
+            background: #eee;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+
+        .tab-button.active {
+            background: #007bff;
+            color: white;
+        }
+
+        .evaluation-form {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .criteria-item {
+            margin: 15px 0;
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="header"></div>
+    <div class="admin-nav">
+        <a href="/" class="home-link">Participant View</a>
+    </div>
+
+    <div class="admin-container">
+        <div class="teams-grid">
+            {% for team in teams %}
+            <div class="team-card">
+                <h2 class="team-name">{{ team.team_name }}</h2>
+                <div class="members">
+                    {% for member in team.members.split(',') %}
+                    <p>{{ member.strip() }}</p>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="help-requests">
+            <h2>Help Requests</h2>
+            <div id="requests-list">
+                {% for request in help_requests %}
+                <div class="help-request">
+                    <h3>{{ request.team }}</h3>
+                    <p>{{ request.help_type }}</p>
+                    <button class="resolve-btn" onclick="toggleResolve(this)">Resolve</button>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="meme-submissions">
+            <h2>Meme Submissions</h2>
+            {% for submission in meme_submissions %}
+            <div class="meme-submission">
+                <h3>{{ submission.team }}</h3>
+                <a href="{{ submission.meme_url }}" target="_blank">View Meme</a>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="evaluation-section" style="margin-top: 50px; padding-bottom: 50px;">
+            <h2>Team Evaluation</h2>
+            <select id="teamSelect" onchange="updateTeamForEvaluation(this.value)" style="margin-bottom: 20px; padding: 10px; width: 200px;">
+                <option value="">Select a team to evaluate</option>
+                {% for team in teams %}
+                <option value="{{ team.team_name }}">{{ team.team_name }}</option>
+                {% endfor %}
+            </select>
+
+            <div class="jury-tabs">
+                <h3>Primary Jury Evaluation</h3>
+                <div class="tab-buttons">
+                <button class="tab-button" onclick="openTab('shanthi')">Shanthi</button>
+                <button class="tab-button" onclick="openTab('neel')">Neel</button>
+                <button class="tab-button" onclick="openTab('srikanth')">Srikanth</button>
+            </div>
+
+            {% for juror in ['shanthi', 'neel', 'srikanth'] %}
+            <div id="{{ juror }}-tab" class="tab-content evaluation-form">
+                <h3>{{ juror.capitalize() }}'s Evaluation</h3>
+                <form action="/submit_evaluation" method="POST">
+                    <input type="hidden" name="juror" value="{{ juror }}">
+                    <input type="hidden" name="jury_type" value="primary">
+                    <input type="hidden" name="team" class="team-input" value="">
+                    
+                    <div class="criteria-item">
+                        <h4>1. Innovation / Problem-Solving Approach</h4>
+                        <ul>
+                            <li>Novelty of idea</li>
+                            <li>Relevance to the use case</li>
+                            <li>Clarity in problem understanding</li>
+                            <li>Smart and thoughtful use of Gen AI</li>
+                        </ul>
+                        <input type="number" name="innovation_score" min="1" max="5" required>
+                    </div>
+
+                    <div class="criteria-item">
+                        <h4>2. Technical Execution & Output Quality</h4>
+                        <ul>
+                            <li>Functional completeness</li>
+                            <li>Quality of output (accuracy, consistency)</li>
+                            <li>Prompt/model engineering</li>
+                            <li>Guardrails such as Safety, ethics, and bias handling</li>
+                        </ul>
+                        <input type="number" name="technical_score" min="1" max="5" required>
+                    </div>
+
+                    <div class="criteria-item">
+                        <h4>3. User Experience</h4>
+                        <ul>
+                            <li>Intuitive and clean UI</li>
+                            <li>Minimal learning curve</li>
+                            <li>Output is easy to interpret and use</li>
+                            <li>Seamless user flow</li>
+                        </ul>
+                        <input type="number" name="ux_score" min="1" max="5" required>
+                    </div>
+
+                    <div class="criteria-item">
+                        <h4>4. Presentation & Team Collaboration</h4>
+                        <ul>
+                            <li>Clear articulation of problem and solution</li>
+                            <li>Demo quality</li>
+                            <li>Collaboration</li>
+                            <li>Equal contribution and clarity of roles</li>
+                        </ul>
+                        <input type="number" name="presentation_score" min="1" max="5" required>
+                    </div>
+
+                    <button type="submit" class="submit-btn">Save Evaluation</button>
+                </form>
+            </div>
+            {% endfor %}
+
+            <h2>Secondary Jury Evaluation</h2>
+            <div class="tab-buttons">
+                <button class="tab-button" onclick="openTab('peroli')">Peroli</button>
+                <button class="tab-button" onclick="openTab('anand')">Anand</button>
+                <button class="tab-button" onclick="openTab('hema')">Hema</button>
+                <button class="tab-button" onclick="openTab('bathri')">Bathri</button>
+                <button class="tab-button" onclick="openTab('subbu')">Subbu</button>
+            </div>
+
+            {% for juror in ['peroli', 'anand', 'hema', 'bathri', 'subbu'] %}
+            <div id="{{ juror }}-tab" class="tab-content evaluation-form">
+                <h3>{{ juror.capitalize() }}'s Evaluation</h3>
+                <form action="/submit_evaluation" method="POST">
+                    <input type="hidden" name="juror" value="{{ juror }}">
+                    
+                    <div class="criteria-item">
+                        <h4>1. MVP Completeness</h4>
+                        <p>Solution fully meets the defined MVP for the selected use case.</p>
+                        <input type="checkbox" name="mvp_completeness" value="true"> Completed
+                    </div>
+
+                    <div class="criteria-item">
+                        <h4>2. Functionality</h4>
+                        <p>Core features are working end-to-end without critical bugs.</p>
+                        <input type="checkbox" name="functionality" value="true"> Completed
+                    </div>
+
+                    <div class="criteria-item">
+                        <h4>3. Simplicity & UX</h4>
+                        <p>User journey is intuitive and minimal training required to use the solution.</p>
+                        <input type="checkbox" name="simplicity_ux" value="true"> Completed
+                    </div>
+
+                    <button type="submit" class="submit-btn">Save Evaluation</button>
+                </form>
+            </div>
+            {% endfor %}
+        </div>
+
+        </div>
+
+    <script>
+        function updateTeamForEvaluation(teamName) {
+            const teamInputs = document.querySelectorAll('.team-input');
+            teamInputs.forEach(input => {
+                input.value = teamName;
+            });
+        }
+
+        function markJurorComplete(jurorId) {
+            const tab = document.getElementById(`${jurorId}-tab`);
+            const button = document.querySelector(`[onclick="openTab('${jurorId}')"]`);
+            tab.classList.add('completed');
+            button.classList.add('completed');
+            button.disabled = true;
+        }
+
+        function openTab(jurorId) {
+            const tab = document.getElementById(`${jurorId}-tab`);
+            const button = event.target;
+            
+            if (tab.classList.contains('active')) {
+                tab.classList.remove('active');
+                button.classList.remove('active');
+            } else {
+                const tabs = document.getElementsByClassName('tab-content');
+                const buttons = document.getElementsByClassName('tab-button');
+                
+                for (let t of tabs) {
+                    t.classList.remove('active');
+                }
+                
+                for (let b of buttons) {
+                    b.classList.remove('active');
+                }
+                
+                tab.classList.add('active');
+                button.classList.add('active');
+            }
+        }
+
+        function toggleResolve(button) {
+            if (button.textContent === 'Resolve') {
+                button.textContent = 'Resolved';
+                button.classList.add('resolved');
+            } else {
+                button.textContent = 'Resolve';
+                button.classList.remove('resolved');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const teams = document.querySelectorAll('.team-card');
+            let currentIndex = 0;
+
+            function showNextTeams() {
+                teams.forEach(team => {
+                    team.style.display = 'none';
+                });
+
+                for(let i = 0; i < 3; i++) {
+                    let index = (currentIndex + i) % teams.length;
+                    if (teams[index]) {
+                        teams[index].style.display = 'block';
+                        teams[index].style.animation = 'fadeInOut 5s forwards';
+                    }
+                }
+
+                currentIndex = (currentIndex + 3) % teams.length;
+                setTimeout(showNextTeams, 5000); 
+            }
+
+            showNextTeams();
+            
+            // Show first tab by default
+            document.querySelector('.tab-button').click();
+        });
+    </script>
+</body>
+</html>
